@@ -1,0 +1,60 @@
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var values = data.values;
+    var command = data.command || "";
+
+    var timeZone = "Asia/Kolkata";
+    var timeNow = new Date();
+    var monthName = Utilities.formatDate(timeNow, timeZone, "MMM-yyyy");
+    var currentDay = Utilities.formatDate(timeNow, timeZone, "dd-MMM-yyyy");
+    var currentTime = Utilities.formatDate(timeNow, timeZone, "HH:mm:ss");
+
+    var ss = SpreadsheetApp.openById("1tc-kw4COFI1k6kRkmN6LuKZHYO7gIKT-JcWQBxd9qmM");
+    var sheet = ss.getSheetByName(monthName);
+
+    //  Create month sheet if missing
+    if (!sheet) {
+      sheet = ss.insertSheet(monthName);
+      sheet.appendRow(["Date", "Timing", "Member ID", "Name", "Last Name", "Phone", "Batch"]);
+      sheet.getRange("A1:G1")
+        .setFontWeight("bold")
+        .setBackground("#f4b084")
+        .setHorizontalAlignment("center");
+      sheet.setFrozenRows(1);
+      sheet.autoResizeColumns(1, 7);
+    }
+
+    //  Insert row logic (coloring removed)
+    if (command === "insert_row" && values && values.length >= 6) {
+      var newRow = [
+        currentDay,
+        currentTime,
+        values[1],
+        values[2],
+        values[3],
+        values[4],
+        values[5]
+      ];
+
+      sheet.appendRow(newRow);
+
+      var lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow, 1, 1, 7).setHorizontalAlignment("left");
+    }
+
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        result: "Success",
+        date: currentDay,
+        time: currentTime
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    Logger.log("Error: " + error);
+    return ContentService.createTextOutput(
+      JSON.stringify({ result: "Error", message: error.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
